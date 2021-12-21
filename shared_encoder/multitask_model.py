@@ -50,6 +50,8 @@ class MultitaskModel(transformers.PreTrainedModel):
             return "roberta"
         elif model_class_name.startswith("Albert"):
             return "albert"
+        elif model_class_name.startswith("XLMR"):
+            return "roberta"
         else:
             raise KeyError(f"Add support for new model {model_class_name}")
 

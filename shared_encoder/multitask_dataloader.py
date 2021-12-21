@@ -63,6 +63,8 @@ class MultitaskDataset(datasets.GeneratorBasedBuilder):
         """This function returns the examples in the raw (text) form."""
         logger.info("generating examples from = %s", filepath)
         data = None
+        if isinstance(filepath, list):
+            filepath = filepath[0]
         if ".tsv" in filepath:
             data = pd.read_csv(filepath, sep="\t")
         else:

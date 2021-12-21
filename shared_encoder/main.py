@@ -19,10 +19,12 @@ from multitask_data_collator import MultitaskTrainer, NLPDataCollator
 from multitask_eval import multitask_eval_fn
 from checkpoint_model import save_model
 from pathlib import Path
-
+import wandb
+import os
 
 logger = logging.getLogger(__name__)
 
+wandb.init(mode="disabled")
 
 try:
     nltk.data.find("tokenizers/punkt")
@@ -68,6 +70,8 @@ def main():
         print()
 
     model_names = [args.model_name_or_path] * 2
+    print(f"\n\n\nVar model_names: {model_names}\n\n\n")
+    
     config_files = model_names
     for idx, task_name in enumerate(["quora_keyword_pairs", "spaadia_squad_pairs"]):
         model_file = Path(f"./{task_name}_model/pytorch_model.bin")
@@ -84,14 +88,8 @@ def main():
             "quora_keyword_pairs": transformers.AutoModelForSequenceClassification,
             "spaadia_squad_pairs": transformers.AutoModelForSequenceClassification,
         },
-        model_config_dict={
-            "quora_keyword_pairs": transformers.AutoConfig.from_pretrained(
-                model_names[0], num_labels=2
-            ),
-            "spaadia_squad_pairs": transformers.AutoConfig.from_pretrained(
-                model_names[1], num_labels=2
-            ),
-        },
+        model_config_dict={"quora_keyword_pairs": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=2),
+            "spaadia_squad_pairs": transformers.AutoConfig.from_pretrained(model_names[1], num_labels=2)},
     )
 
     print(multitask_model.encoder.embeddings.word_embeddings.weight.data_ptr())
@@ -145,6 +143,8 @@ def main():
     train_dataset = {
         task_name: dataset["train"] for task_name, dataset in features_dict.items()
     }
+    
+    print(args.per_device_train_batch_size, type(args.per_device_train_batch_size))
 
     trainer = MultitaskTrainer(
         model=multitask_model,
@@ -155,7 +155,8 @@ def main():
             do_train=True,
             num_train_epochs=args.num_train_epochs,
             # Adjust batch size if this doesn't fit on the Colab GPU
-            per_device_train_batch_size=args.per_device_train_batch_size,
+            per_device_train_batch_size=args.per_device_train_batch_size-4,
+            report_to=None,
             save_steps=3000,
         ),
         data_collator=NLPDataCollator(),
