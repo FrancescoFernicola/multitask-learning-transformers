@@ -36,7 +36,7 @@ class MultitaskDataset(datasets.GeneratorBasedBuilder):
             features=datasets.Features(
                 {
                     "doc": datasets.Value("string"),
-                    "target": datasets.Value("int32"),
+                    "target": datasets.Value("float32"),
                 }
             ),
             # No default supervised_keys (as we have to pass both question
@@ -71,7 +71,7 @@ class MultitaskDataset(datasets.GeneratorBasedBuilder):
             data = pd.read_csv(filepath)
         data = data
         for idx, row in data.iterrows():
-            yield row["id"], {
-                "doc": row["doc"],
-                "target": row["target"],
+            yield row["idx"], {
+                "doc": row["sentence"],
+                "target": row["label"],
             }
