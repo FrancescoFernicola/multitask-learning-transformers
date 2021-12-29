@@ -48,32 +48,46 @@ def main():
     # 'text' is found. You can easily tweak this behavior (see below).
 
     dataset_dict = {
-        "quora_keyword_pairs": load_dataset(
+        "BERTScore": load_dataset(
             "multitask_dataloader.py",
             data_files={
-                "train": "data/quora_keyword_pairs/train.tsv",
-                "validation": "data/quora_keyword_pairs/dev.tsv",
-            },
-        ),
-        "spaadia_squad_pairs": load_dataset(
+                "train": "../../partitions/BERTScore/BERTScore_train.tsv",
+                "validation": "../../partitions/BERTScore/BERTScore_validate.tsv",
+                },
+            ),
+        "CushLEPOR": load_dataset(
             "multitask_dataloader.py",
             data_files={
-                "train": "data/spaadia_squad_pairs/train.csv",
-                "validation": "data/spaadia_squad_pairs/val.csv",
-            },
-        ),
-    }
+                "train": "../../partitions/CushLEPOR/CushLEPOR_train.tsv",
+                "validation": "../../partitions/CushLEPOR/CushLEPOR_validate.tsv",
+                },
+            ),
+        "COMET": load_dataset(
+            "multitask_dataloader.py",
+            data_files={
+                "train": "../../partitions/COMET/COMET_train.tsv",
+                "validation": "../../partitions/COMET/COMET_validate.tsv",
+                },
+            ),
+        "TransQuest": load_dataset(
+            "multitask_dataloader.py",
+            data_files={
+                "train": "../../partitions/TransQuest/TransQuest_train.tsv",
+                "validation": "../../partitions/TransQuest/TransQuest_validate.tsv",
+                },
+            ),
+        }
 
     for task_name, dataset in dataset_dict.items():
-        print(task_name)
-        print(dataset_dict[task_name]["train"][0])
-        print()
+        print("Task name: ", task_name)
+        print("Dataset: ", dataset_dict[task_name]["train"][0])
+        print("\n\n\n")
 
-    model_names = [args.model_name_or_path] * 2
+    model_names = [args.model_name_or_path] * 4
     print(f"\n\n\nVar model_names: {model_names}\n\n\n")
     
     config_files = model_names
-    for idx, task_name in enumerate(["quora_keyword_pairs", "spaadia_squad_pairs"]):
+    for idx, task_name in enumerate(["BERTScore", "CushLEPOR", "COMET", "TransQuest"]): #Add all other keys to this dict
         model_file = Path(f"./{task_name}_model/pytorch_model.bin")
         config_file = Path(f"./{task_name}_model/config.json")
         if model_file.is_file():
@@ -85,34 +99,38 @@ def main():
     multitask_model = MultitaskModel.create(
         model_name=model_names[0],
         model_type_dict={
-            "quora_keyword_pairs": transformers.AutoModelForSequenceClassification,
-            "spaadia_squad_pairs": transformers.AutoModelForSequenceClassification,
+            "BERTScore": transformers.AutoModelForSequenceClassification,
+            "CushLEPOR": transformers.AutoModelForSequenceClassification,
+            "COMET": transformers.AutoModelForSequenceClassification,
+            "TransQuest": transformers.AutoModelForSequenceClassification,
         },
-        model_config_dict={"quora_keyword_pairs": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=2),
-            "spaadia_squad_pairs": transformers.AutoConfig.from_pretrained(model_names[1], num_labels=2)},
+        model_config_dict={
+            "BERTScore": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
+            "CushLEPOR": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
+            "COMET": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
+            "TransQuest": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
+        },
     )
 
-    print(multitask_model.encoder.embeddings.word_embeddings.weight.data_ptr())
-    print(
-        multitask_model.taskmodels_dict[
-            "quora_keyword_pairs"
-        ].roberta.embeddings.word_embeddings.weight.data_ptr()
-    )
-    print(
-        multitask_model.taskmodels_dict[
-            "spaadia_squad_pairs"
-        ].roberta.embeddings.word_embeddings.weight.data_ptr()
-    )
-
+    print("Encoder Word Embeddings: ", multitask_model.encoder.embeddings.word_embeddings.weight.data_ptr())
+    print("BERTScore Word Embeddings: ", multitask_model.taskmodels_dict["BERTScore"].roberta.embeddings.word_embeddings.weight.data_ptr())
+    print("CushLEPOR Word Embeddings: ", multitask_model.taskmodels_dict["CushLEPOR"].roberta.embeddings.word_embeddings.weight.data_ptr())
+    print("COMET Word Embeddings: ", multitask_model.taskmodels_dict["COMET"].roberta.embeddings.word_embeddings.weight.data_ptr())
+    print("TransQuest Word Embeddings: ", multitask_model.taskmodels_dict["TransQuest"].roberta.embeddings.word_embeddings.weight.data_ptr())
+    
     convert_func_dict = {
-        "quora_keyword_pairs": convert_to_features,
-        "spaadia_squad_pairs": convert_to_features,
-    }
+        "BERTScore": convert_to_features,
+        "CushLEPOR": convert_to_features,
+        "COMET": convert_to_features,
+        "TransQuest": convert_to_features,
+        }
 
     columns_dict = {
-        "quora_keyword_pairs": ["input_ids", "attention_mask", "labels"],
-        "spaadia_squad_pairs": ["input_ids", "attention_mask", "labels"],
-    }
+        "BERTScore": ["input_ids", "attention_mask", "labels"],
+        "CushLEPOR": ["input_ids", "attention_mask", "labels"],
+        "COMET": ["input_ids", "attention_mask", "labels"],
+        "TransQuest": ["input_ids", "attention_mask", "labels"],
+        }
 
     features_dict = {}
     for task_name, dataset in dataset_dict.items():
@@ -151,7 +169,7 @@ def main():
         args=transformers.TrainingArguments(
             output_dir=args.output_dir,
             overwrite_output_dir=True,
-            learning_rate=1e-5,
+            learning_rate=5e-5,
             do_train=True,
             num_train_epochs=args.num_train_epochs,
             # Adjust batch size if this doesn't fit on the Colab GPU
@@ -165,10 +183,10 @@ def main():
     trainer.train()
 
     ## evaluate on given tasks
-    multitask_eval_fn(multitask_model, "roberta-base", dataset_dict)
+    multitask_eval_fn(multitask_model, "xlm-roberta-base", dataset_dict)
 
     ## save model for later use
-    save_model("roberta-base", multitask_model)
+    save_model("xlm-roberta-base", multitask_model)
 
 
 if __name__ == "__main__":
