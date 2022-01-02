@@ -62,18 +62,19 @@ def main():
                 "validation": "../../partitions/CushLEPOR/CushLEPOR_validate.tsv",
                 },
             ),
+        
         "COMET": load_dataset(
             "multitask_dataloader.py",
             data_files={
-                "train": "../../partitions/COMET/COMET_train.tsv",
-                "validation": "../../partitions/COMET/COMET_validate.tsv",
+                "train": "../../partitions/COMET/COMET_norm_train.tsv",
+                "validation": "../../partitions/COMET/COMET_norm_validate.tsv",
                 },
             ),
         "TransQuest": load_dataset(
             "multitask_dataloader.py",
             data_files={
-                "train": "../../partitions/TransQuest/TransQuest_train.tsv",
-                "validation": "../../partitions/TransQuest/TransQuest_validate.tsv",
+                "train": "../../partitions/TransQuest/TransQuest_norm_train.tsv",
+                "validation": "../../partitions/TransQuest/TransQuest_norm_validate.tsv",
                 },
             ),
         }
@@ -87,7 +88,7 @@ def main():
     print(f"\n\n\nVar model_names: {model_names}\n\n\n")
     
     config_files = model_names
-    for idx, task_name in enumerate(["BERTScore", "CushLEPOR", "COMET", "TransQuest"]): #Add all other keys to this dict
+    for idx, task_name in enumerate(["BERTScore", "CushLEPOR" """, "COMET", "TransQuest" """]): #Add all other keys to this dict
         model_file = Path(f"./{task_name}_model/pytorch_model.bin")
         config_file = Path(f"./{task_name}_model/config.json")
         if model_file.is_file():
@@ -103,26 +104,29 @@ def main():
             "CushLEPOR": transformers.AutoModelForSequenceClassification,
             "COMET": transformers.AutoModelForSequenceClassification,
             "TransQuest": transformers.AutoModelForSequenceClassification,
-        },
+            },
         model_config_dict={
             "BERTScore": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
             "CushLEPOR": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
             "COMET": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
             "TransQuest": transformers.AutoConfig.from_pretrained(model_names[0], num_labels=1),
-        },
-    )
+            },
+        )
 
     print("Encoder Word Embeddings: ", multitask_model.encoder.embeddings.word_embeddings.weight.data_ptr())
     print("BERTScore Word Embeddings: ", multitask_model.taskmodels_dict["BERTScore"].roberta.embeddings.word_embeddings.weight.data_ptr())
     print("CushLEPOR Word Embeddings: ", multitask_model.taskmodels_dict["CushLEPOR"].roberta.embeddings.word_embeddings.weight.data_ptr())
+    """
     print("COMET Word Embeddings: ", multitask_model.taskmodels_dict["COMET"].roberta.embeddings.word_embeddings.weight.data_ptr())
     print("TransQuest Word Embeddings: ", multitask_model.taskmodels_dict["TransQuest"].roberta.embeddings.word_embeddings.weight.data_ptr())
-    
+    """
     convert_func_dict = {
         "BERTScore": convert_to_features,
         "CushLEPOR": convert_to_features,
+        
         "COMET": convert_to_features,
         "TransQuest": convert_to_features,
+        
         }
 
     columns_dict = {
@@ -173,7 +177,7 @@ def main():
             do_train=True,
             num_train_epochs=args.num_train_epochs,
             # Adjust batch size if this doesn't fit on the Colab GPU
-            per_device_train_batch_size=args.per_device_train_batch_size-4,
+            per_device_train_batch_size=args.per_device_train_batch_size,
             report_to=None,
             save_steps=3000,
         ),
