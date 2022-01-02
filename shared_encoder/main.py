@@ -88,7 +88,7 @@ def main():
     print(f"\n\n\nVar model_names: {model_names}\n\n\n")
     
     config_files = model_names
-    for idx, task_name in enumerate(["BERTScore", "CushLEPOR" """, "COMET", "TransQuest" """]): #Add all other keys to this dict
+    for idx, task_name in enumerate(["BERTScore", "CushLEPOR", "COMET", "TransQuest"]): #Add all other keys to this dict
         model_file = Path(f"./{task_name}_model/pytorch_model.bin")
         config_file = Path(f"./{task_name}_model/config.json")
         if model_file.is_file():
@@ -116,10 +116,9 @@ def main():
     print("Encoder Word Embeddings: ", multitask_model.encoder.embeddings.word_embeddings.weight.data_ptr())
     print("BERTScore Word Embeddings: ", multitask_model.taskmodels_dict["BERTScore"].roberta.embeddings.word_embeddings.weight.data_ptr())
     print("CushLEPOR Word Embeddings: ", multitask_model.taskmodels_dict["CushLEPOR"].roberta.embeddings.word_embeddings.weight.data_ptr())
-    """
     print("COMET Word Embeddings: ", multitask_model.taskmodels_dict["COMET"].roberta.embeddings.word_embeddings.weight.data_ptr())
     print("TransQuest Word Embeddings: ", multitask_model.taskmodels_dict["TransQuest"].roberta.embeddings.word_embeddings.weight.data_ptr())
-    """
+
     convert_func_dict = {
         "BERTScore": convert_to_features,
         "CushLEPOR": convert_to_features,
